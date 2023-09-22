@@ -8,7 +8,7 @@ const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = 3000;
-const abi = JSON.parse(fs.readFileSync('./contractVotations_sol_Votacion.abi', 'utf-8'));
+const abi = JSON.parse(fs.readFileSync('./contractVotations2_sol_Votaciones.abi', 'utf-8'));
 const contractAddress= '0x55224de443A6E7B1EAd6550B49Ca6b8918E38dCd';
 let provider = new Web3.providers.HttpProvider("HTTP://127.0.0.1:7545");
 

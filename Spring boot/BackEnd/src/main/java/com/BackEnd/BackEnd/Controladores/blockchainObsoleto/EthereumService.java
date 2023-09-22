@@ -1,4 +1,4 @@
-package com.BackEnd.BackEnd.Controllers;
+package com.BackEnd.BackEnd.Controladores.blockchainObsoleto;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

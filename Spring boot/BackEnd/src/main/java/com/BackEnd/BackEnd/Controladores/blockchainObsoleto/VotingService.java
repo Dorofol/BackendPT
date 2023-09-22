@@ -1,4 +1,4 @@
-package com.BackEnd.BackEnd.Controllers;
+package com.BackEnd.BackEnd.Controladores.blockchainObsoleto;
 
 import java.math.BigInteger;
 
@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.StaticGasProvider;
 import org.web3j.utils.Version;
-import com.BackEnd.BackEnd.Controllers.Votacion;
+import com.BackEnd.BackEnd.Controladores.blockchainObsoleto.Votacion;
 @Service
 public class VotingService {
 

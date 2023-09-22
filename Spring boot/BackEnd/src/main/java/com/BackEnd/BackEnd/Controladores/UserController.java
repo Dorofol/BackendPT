@@ -1,8 +1,11 @@
-package com.BackEnd.BackEnd.Controllers;
+package com.BackEnd.BackEnd.Controladores;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+//import org.bouncycastle.jcajce.BCFKSLoadStoreParameter.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +18,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.BackEnd.BackEnd.Model.User;
-import com.BackEnd.BackEnd.Repositories.UserRepo;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+
+import com.BackEnd.BackEnd.Modelos.Usuario;
+import com.BackEnd.BackEnd.Modelos.Usuario.RolSistema;
+import com.BackEnd.BackEnd.Repositorios.UserRepo;
 
 @RestController
 @RequestMapping("/user")
@@ -28,10 +35,10 @@ public class UserController {
 	
 
     @GetMapping("/listarusuarios")
-    public List<User> obtenerUsuarios()   
+    public List<Usuario> obtenerUsuarios()   
 {  
     
-    List<User> usuarios = new ArrayList<User>();  
+    List<Usuario> usuarios = new ArrayList<Usuario>();  
     repo.findAll().forEach(books1 -> usuarios.add(books1));  
     return usuarios;  
 }  
@@ -43,10 +50,11 @@ public class UserController {
     }   */ 
     
     @PostMapping("/crearUsuario")  
-    private ResponseEntity<?> crearusuario(@RequestBody User user)   
-    {  
+    private ResponseEntity<?> crearusuario(@RequestBody Usuario user)   {
         try {
             System.out.println("Funcionando 2, Data del usuario recibido de mysql:"+ user);
+            user.setRolSistema(RolSistema.Usuario);
+            user.setIdBlockchain("0xpoq9012jhgnuasdb8b2bewqed");
             repo.save(user);  
             return ResponseEntity.ok(user);
         } catch (Exception e) {
@@ -63,10 +71,10 @@ public class UserController {
 
 
     @GetMapping("/getuser/{id}")
-    public ResponseEntity<?> getuser(@PathVariable("id") String id){
+    public ResponseEntity<?> getuser(@PathVariable String id){
         System.out.println("Funcionando, Data del usuario recibido de angular:");
         
-        User user= repo.findByUserId(id);
+        Usuario user= repo.findByEmail(id);
          if(user!=null){
             System.out.println("Funcionando 2, Data del usuario recibido de mysql:"+ user);
             return ResponseEntity.ok(user);
@@ -79,23 +87,51 @@ public class UserController {
 
     //borrar usuario recordar que se tiene que mandar como delete no como get o post
     @DeleteMapping("/Usuario/{id}")  
-    private void deleteBook(@PathVariable("id") String id)   
+    private void deleteBook(@PathVariable String id)   
     {  
     repo.deleteById(id);  
     }  
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody User userData){
+    public ResponseEntity<?> loginUser(@RequestBody Usuario userData){
         System.out.println("Funcionando, Data del usuario recibido de angular:"+ userData);
         
-         User user= repo.findByUserId(userData.getUserId());
+         Usuario user= repo.findByEmail(userData.getEmail());
          if(user!=null){
             System.out.println("Funcionando 2, Data del usuario recibido de mysql:"+ user);
-         if(user.getPassword().equals(userData.getPassword())){
+         if(user.getContrasena().equals(userData.getContrasena())){
             return ResponseEntity.ok(user);
          }}
         //return (ResponseEntity<?>) ResponseEntity.internalServerError() ;
         System.out.println("No se encontro el usuario o fallo el inicio de sesion "+ userData);
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+    }
+    @PostMapping("/loginCookie")
+    public ResponseEntity<?> loginCookie(@RequestBody Usuario userData) {
+        // ... (autenticación)
+        // System.out.println(userData);
+         Usuario user= repo.findByEmail(userData.getEmail());
+         //System.out.println(user);
+        if (user.getContrasena().equals(userData.getContrasena())) {
+            String token = Jwts.builder()
+                .setSubject(user.getEmail())
+                .claim("idUsuario", user.getIdUsuario())
+                .claim("fechaNacimiento", user.getFechaNacimiento().toString())
+                .claim("nombreCompleto", user.getNombreCompleto())
+                .claim("rolSistema", user.getRolSistema())
+                .claim("idBlockchain", user.getIdBlockchain())
+                .claim("email", user.getEmail())
+                .signWith(SignatureAlgorithm.HS512, "firmadellavesecretaunica")
+                .compact();
+                Map<String, String> tokenResponse = new HashMap<>();
+                tokenResponse.put("token", token);
+                //tokenResponse.put("user", user.toString());
+                return ResponseEntity.ok(tokenResponse);
+            //return ResponseEntity.ok(token.toString());  // Envía el JWT al cliente
+        }
+        
+            System.out.println(user);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        // ...
     }
 }
