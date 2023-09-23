@@ -12,8 +12,9 @@ let provider = new Web3.providers.HttpProvider("HTTP://127.0.0.1:7545");
 let web3 = new Web3(provider);
 
 const abi = JSON.parse(fs.readFileSync('./contractVotations2_sol_Votaciones.abi'));
+//const abi = JSON.parse(fs.readFileSync('./contractVotations2_sol_crearVotacion.abi'));
 //const abi = JSON.parse(fs.readFileSync('./__test_sol_SimpleStorage.abi'));
-const contractAddress= '0x7A41Ecd6D8607cef3F0579fd3b5f9c9190f8c2B5';
+const contractAddress= '0x9a3a9e812BA9714f9ed54AA39EAe8674D2450231';
 
 const contrato = new web3.eth.Contract(abi, contractAddress);
 
@@ -34,16 +35,17 @@ app.post('/crearVotacion', async (req, res) => {
 });
 
 // Agregar un candidato a una votación específica
-app.post('/agregarCandidato', async (req, res) => {
+/*app.post('/agregarCandidato', async (req, res) => {
     const { votacionId, nombre } = req.body;
     try {
         const cuentas = await web3.eth.getAccounts();
-        await contrato.methods.agregarCandidato(votacionId, nombre).send({ from: cuentas[0] });
+        const ag=await contrato.methods.agregarCandidato(votacionId, nombre).send({ from: cuentas[0] });
+        console.log(ag);
         res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ error: 'Error al agregar candidato'+error });
+        res.status(500).json({ error: 'Error al agregar candidato '+error });
     }
-});
+});*/
 
 app.post('/testpo', async (req, res) => {
     const { votacionId, nombre } = req.body;
@@ -110,10 +112,104 @@ app.get('/obtenerIDsVotaciones', async (req, res) => {
     try {
         const cuentas = await web3.eth.getAccounts();
         const idsVotaciones = await contrato.methods.obtenerIDsVotaciones().call();
-        console.log(idsVotaciones)
-        res.json(idsVotaciones.toString);
+        console.log(idsVotaciones.toString())
+        res.json(idsVotaciones);
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener IDs de votaciones: ' + error });
+    }
+});
+app.post('/crearElection', async (req, res) => {
+    const {
+        id, nombre, descripcion, fecha_inicio, fecha_final, contrasena
+    } = req.body;
+
+    try {
+        const cuentas = await web3.eth.getAccounts();
+        const resultado = await contrato.methods.createElection(id, nombre, descripcion, fecha_inicio, fecha_final, contrasena).send({ from: cuentas[1] });
+        console.log(resultado);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al crear elección: ' + error.message });
+    }
+});
+app.get('/getDeployedElection/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const detallesVotacion = await contrato.methods.getDeployedElection(id).call();
+        console.log(detallesVotacion);
+        res.json(detallesVotacion);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener detalles de la votación: ' + error.message });
+    }
+});
+// 1. POST /crearElection
+app.post('/crearElection', async (req, res) => {
+    const {
+        id, nombre, descripcion, fecha_inicio, fecha_final, contrasena
+    } = req.body;
+
+    try {
+        const cuentas = await web3.eth.getAccounts();
+        const resultado = await contrato.methods.createElection(id, nombre, descripcion, fecha_inicio, fecha_final, contrasena).send({ from: cuentas[0] });
+        console.log(resultado);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al crear elección: ' + error.message });
+    }
+});
+
+// 2. POST /agregarCandidato
+app.post('/agregarCandidato', async (req, res) => {
+    const { id_candidato, nombre_candidato, email_candidato } = req.body;
+    try {
+        const cuentas = await web3.eth.getAccounts();
+        console.log(id_candidato, nombre_candidato, email_candidato);
+        const resultado = await contrato.methods.agregarCandidato(id_candidato, nombre_candidato, email_candidato).send({ from: cuentas[1],gas: 6721974 });
+        console.log(resultado);
+        res.json({ success: true });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Error al agregar candidato: ' + error.message });
+    }
+});
+
+// 3. GET /getNumeroCandidatos
+app.get('/getNumeroCandidatos', async (req, res) => {
+    try {
+        const numero = await contrato.methods.getNumeroCandidatos().call();
+        console.log(numero);
+        res.json({ numCandidatos: numero });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener el número de candidatos: ' + error.message });
+    }
+});
+
+// 4. GET /getNumOfVoters
+app.get('/getNumOfVoters', async (req, res) => {
+    try {
+        const numero = await contrato.methods.getNumOfVoters().call();
+        console.log(numero);
+        res.json({ numVotantes: numero });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener el número de votantes: ' + error.message });
+    }
+});
+
+// 5. GET /getCandidate/:id
+app.get('/getCandidate/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const candidato = await contrato.methods.getCandidate(id).call();
+        console.log(candidato);
+        let candidatoSerializable = {
+            id: candidato[0].toString(),
+            nombre: candidato[1],
+            email: candidato[2],
+            contadorVotos: candidato[3].toString()
+        };
+        res.json(candidatoSerializable);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener detalles del candidato: ' + error.message });
     }
 });
 

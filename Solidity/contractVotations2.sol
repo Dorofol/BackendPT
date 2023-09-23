@@ -6,76 +6,84 @@ contract Votaciones {
     struct Candidato {
         uint id;
         string nombre;
+        string email;
         uint contadorVotos;
     }
+    mapping(uint=>Candidato) public candidatos;
 
-    struct Votacion {
+    struct Votante {
         uint id;
-        mapping(uint => Candidato) candidatos;
-        mapping(address => bool) votantes;
-        uint candidatosCount;
+        bool voted;
+        uint candidatoID;
+        string contrasena;
     }
 
-    mapping(uint => Votacion) public votaciones;
-    uint public votacionesCount = 0;
+    mapping(uint=>Votante) votantes;
 
-    function crearVotacion() public returns (uint) {
-        votacionesCount++;
+    uint public idVotacion;
+    string public nombre_votacion;
+    string public description_votacion;
+    uint num_candidatos=0;
+    uint num_votantes=0;
+    bool estatus=true;
+    string public fecha_inicio_votacion;
+    string public fecha_termino_votacion;
+    string public contrasena_administrador;
 
-        votaciones[votacionesCount].id = votacionesCount;
-        votaciones[votacionesCount].candidatosCount = 0;
-
-        return votacionesCount;
+    constructor(uint id, string memory nombre, string memory descripcion, string memory fecha_inicio, string memory fecha_final, string memory contrasena) {
+        idVotacion = id;
+        nombre_votacion = nombre;
+        description_votacion = descripcion;
+        fecha_inicio_votacion = fecha_inicio;
+        fecha_termino_votacion = fecha_final;
+        contrasena_administrador = contrasena;
+        estatus= true;
     }
-
-    function agregarCandidato(uint _votacionId, string memory _nombre) public {
-        Votacion storage votacion = votaciones[_votacionId];
-        votacion.candidatosCount++;
-
-        votacion.candidatos[votacion.candidatosCount].id = votacion.candidatosCount;
-        votacion.candidatos[votacion.candidatosCount].nombre = _nombre;
-        votacion.candidatos[votacion.candidatosCount].contadorVotos = 0;
+    function agregarCandidato(uint id_candidato, string memory nombre_candidato, string memory email_candidato,string memory contrasena) public {
+        require(estatus, "La votacion esta inactiva.");
+          require(keccak256(bytes(contrasena)) == keccak256(bytes(contrasena_administrador)), "Contrasena adadministradormin incorrecta.");
+        num_candidatos++; 
+        candidatos[num_candidatos] = Candidato(id_candidato,nombre_candidato,email_candidato,0); 
+    }    
+    function agregarVotante(uint id_votante, string memory contrasena) public {
+        require(estatus, "La votacion esta inactiva.");
+          require(keccak256(bytes(contrasena)) == keccak256(bytes(contrasena_administrador)), "Contrasena administrador incorrecta.");
+        num_votantes++; 
+        votantes[num_votantes] = Votante(id_votante, false, 0, contrasena); 
     }
-
-    function votar(uint _votacionId, uint _candidatoId) public {
-        Votacion storage votacion = votaciones[_votacionId];
-
-        // Asegura que el votante no ha votado antes en esta votación
-        require(!votacion.votantes[msg.sender], "Usted ya ha votado en esta votacion.");
-
-        // Asegura que el candidato es válido
-        require(_candidatoId > 0 && _candidatoId <= votacion.candidatosCount, "Candidato no valido.");
-
-        // Registra el voto
-        votacion.candidatos[_candidatoId].contadorVotos++;
-
-        // Marca al votante como que ya ha votado en esta votación
-        votacion.votantes[msg.sender] = true;
+   function votar(uint candidato_ID,uint votante_id,string memory contrasena_votante) public {
+        require(estatus, "La votacion esta inactiva.");
+        require(keccak256(bytes(votantes[candidato_ID].contrasena)) == keccak256(bytes(contrasena_votante)), "Contrasena usuario incorrecta.");
+        require(!votantes[votante_id].voted, "El usuario ya ha votado por alguien.");
+        
+        votantes[candidato_ID].candidatoID=candidato_ID;
+        votantes[candidato_ID].voted=true ;
+        candidatos[candidato_ID].contadorVotos++;
     }
-
-    function obtenerVotos(uint _votacionId, uint _candidatoId) public view returns (uint) {
-        Votacion storage votacion = votaciones[_votacionId];
-
-
-        return votacion.candidatos[_candidatoId].contadorVotos;
+    function getNumeroCandidatos() public view returns(uint) {
+        return num_candidatos;
     }
-    function obtenerCandidatos(uint _votacionId) public view returns (Candidato[] memory) {
-    Votacion storage votacion = votaciones[_votacionId];
-    Candidato[] memory candidatosArray = new Candidato[](votacion.candidatosCount);
-
-    for (uint i = 1; i <= votacion.candidatosCount; i++) {
-        candidatosArray[i-1] = votacion.candidatos[i];
+    function getNumeroVotadores() public view returns(uint) {
+        return num_votantes;
     }
-
-    return candidatosArray;
-}
-function obtenerIDsVotaciones() public view returns (uint[] memory) {
-    uint[] memory ids = new uint[](votacionesCount);
-    for (uint i = 1; i <= votacionesCount; i++) {
-        ids[i-1] = i;
+    function getCandidate(uint id_candidato, string memory contrasena_votante ) public view returns (uint, string memory , string memory ,uint) {
+        require(keccak256(bytes(votantes[id_candidato].contrasena)) == keccak256(bytes(contrasena_votante)), "Contrasena usuario incorrecta.");
+        return (candidatos[id_candidato].id, candidatos[id_candidato].nombre, candidatos[id_candidato].email, candidatos[id_candidato].contadorVotos);
+    } 
+    
+    function getVotante(uint id_votante) public view returns (uint, bool, uint) {
+        return (votantes[id_votante].id, votantes[id_votante].voted, votantes[id_votante].candidatoID);
     }
-    return ids;
-}
-
-
+    function candidatoGanador() public view  returns (uint) {
+    require(!estatus, "La votacion sigue activa.");
+    uint masVotos = candidatos[0].contadorVotos;
+    uint id_candidatoGanador;
+    for(uint i = 1;i<num_candidatos;i++) {
+        if(masVotos < candidatos[i].contadorVotos) {
+            masVotos = candidatos[i].contadorVotos;
+            id_candidatoGanador = i;
+        }
+    }
+    return (id_candidatoGanador);
+    }
 }
