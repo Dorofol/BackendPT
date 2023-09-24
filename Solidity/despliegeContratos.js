@@ -27,8 +27,7 @@ web3.eth.getAccounts().then(async (accounts) => {
         arguments: [0, "cola", "descripcion", "fecha_inicio", "fecha_final", "contrasena"]
     }).send({
         from: accounts[0], 
-        gas: 6721974
+        gas: 600000
     });
-
     console.log('Contrato desplegado en la dirección:', deployedContrato.options.address);
 });

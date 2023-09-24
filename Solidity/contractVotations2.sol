@@ -21,14 +21,15 @@ contract Votaciones {
     mapping(uint=>Votante) votantes;
 
     uint public idVotacion;
+    uint public candidatoGan=9999;
     string public nombre_votacion;
     string public description_votacion;
-    uint num_candidatos=0;
-    uint num_votantes=0;
-    bool estatus=true;
     string public fecha_inicio_votacion;
     string public fecha_termino_votacion;
     string public contrasena_administrador;
+    uint num_candidatos=0;
+    uint num_votantes=0;
+    bool estatus=true;
 
     constructor(uint id, string memory nombre, string memory descripcion, string memory fecha_inicio, string memory fecha_final, string memory contrasena) {
         idVotacion = id;
@@ -45,19 +46,29 @@ contract Votaciones {
         num_candidatos++; 
         candidatos[num_candidatos] = Candidato(id_candidato,nombre_candidato,email_candidato,0); 
     }    
+    function terminarVotacion(string memory contrasena) public {
+        require(estatus, "La votacion ya esta inactiva.");
+          require(keccak256(bytes(contrasena)) == keccak256(bytes(contrasena_administrador)), "Contrasena adadministradormin incorrecta.");
+         estatus=false;
+    }    
     function agregarVotante(uint id_votante, string memory contrasena) public {
         require(estatus, "La votacion esta inactiva.");
-          require(keccak256(bytes(contrasena)) == keccak256(bytes(contrasena_administrador)), "Contrasena administrador incorrecta.");
-        num_votantes++; 
+        require(keccak256(bytes(contrasena)) == keccak256(bytes(contrasena_administrador)), "Contrasena administrador incorrecta.");
+        num_votantes++;
         votantes[num_votantes] = Votante(id_votante, false, 0, contrasena); 
+    }    
+    function cambiarContrasenaVot(uint id_votante, string memory contrasena, string memory nueva_contrasena) public {
+        require(estatus, "La votacion esta inactiva.");
+          require(keccak256(bytes(contrasena)) == keccak256(bytes(votantes[id_votante].contrasena)), "Contrasena usuario incorrecta.");
+        votantes[id_votante].contrasena = nueva_contrasena; 
     }
    function votar(uint candidato_ID,uint votante_id,string memory contrasena_votante) public {
         require(estatus, "La votacion esta inactiva.");
         require(keccak256(bytes(votantes[candidato_ID].contrasena)) == keccak256(bytes(contrasena_votante)), "Contrasena usuario incorrecta.");
         require(!votantes[votante_id].voted, "El usuario ya ha votado por alguien.");
         
-        votantes[candidato_ID].candidatoID=candidato_ID;
-        votantes[candidato_ID].voted=true ;
+        votantes[votante_id].candidatoID=candidato_ID;
+        votantes[votante_id].voted=true ;
         candidatos[candidato_ID].contadorVotos++;
     }
     function getNumeroCandidatos() public view returns(uint) {
@@ -66,8 +77,8 @@ contract Votaciones {
     function getNumeroVotadores() public view returns(uint) {
         return num_votantes;
     }
-    function getCandidate(uint id_candidato, string memory contrasena_votante ) public view returns (uint, string memory , string memory ,uint) {
-        require(keccak256(bytes(votantes[id_candidato].contrasena)) == keccak256(bytes(contrasena_votante)), "Contrasena usuario incorrecta.");
+    function getCandidate(uint id_candidato, string memory contrasena_admin ) public view returns (uint, string memory , string memory ,uint) {
+        require(keccak256(bytes(contrasena_administrador)) == keccak256(bytes(contrasena_admin)), "Contrasena usuario incorrecta.");
         return (candidatos[id_candidato].id, candidatos[id_candidato].nombre, candidatos[id_candidato].email, candidatos[id_candidato].contadorVotos);
     } 
     
@@ -85,5 +96,17 @@ contract Votaciones {
         }
     }
     return (id_candidatoGanador);
+    }
+    function getInfo(string memory contrasena) public view returns (uint, string memory, string memory, string memory, string memory, bool,uint) {
+        require(keccak256(bytes(contrasena)) == keccak256(bytes(contrasena_administrador)), "Contrasena administrador incorrecta.");
+        return (
+            idVotacion,
+            nombre_votacion,
+            description_votacion,
+            fecha_inicio_votacion,
+            fecha_termino_votacion,
+            estatus,
+            candidatoGan
+        );
     }
 }
