@@ -15,10 +15,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+
 import io.jsonwebtoken.SignatureAlgorithm;
 
 import com.BackEnd.BackEnd.Modelos.Usuario;
@@ -32,7 +36,9 @@ public class UserController {
     
     @Autowired
     private UserRepo repo;
-	
+
+	private final String SECRET_KEY = "firmadellavesecretaunica"; // Es recomendable tener esto en un archivo de configuración, no directamente en el código
+
 
     @GetMapping("/listarusuarios")
     public List<Usuario> obtenerUsuarios()   
@@ -106,6 +112,27 @@ public class UserController {
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
     }
+    @PostMapping("/validateToken")
+    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String token) {
+            try {
+                // Quitar "Bearer " si el token viene de esa forma
+                if (token.startsWith("Bearer ")) {
+                    token = token.substring(7);
+                }
+
+                Jws<Claims> claims = Jwts.parser()
+                    .setSigningKey(SECRET_KEY)
+                    .parseClaimsJws(token);
+
+                // Si llega hasta aquí, el token es válido
+                System.out.println(claims);
+                return ResponseEntity.ok("Token válido!");
+
+            } catch (Exception e) {
+                // Esto maneja cualquier excepción relacionada con la descompresión del token, como un token expirado o una firma incorrecta.
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token no válido");
+            }
+        }
     @PostMapping("/loginCookie")
     public ResponseEntity<?> loginCookie(@RequestBody Usuario userData) {
         // ... (autenticación)
