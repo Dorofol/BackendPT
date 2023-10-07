@@ -6,11 +6,7 @@ import org.springframework.stereotype.Repository;
 import com.BackEnd.BackEnd.Modelos.Usuario;
 
 @Repository
-public interface UserRepo extends JpaRepository<Usuario,String>  {
-
+public interface UserRepo extends JpaRepository<Usuario,Integer>  {
     Usuario findByEmail(String email);
-
-
-
-    
+    Usuario findByIdUsuario(int id);
 }

@@ -1,5 +1,6 @@
 package com.BackEnd.BackEnd.Modelos;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -9,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -47,6 +49,19 @@ public class Usuario {
 
     public enum RolSistema {
         Admin, Usuario
+    }
+        @Override
+    public String toString() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return "{" +
+            "idUsuario=" + idUsuario +
+            ", fechaNacimiento=" + (fechaNacimiento != null ? sdf.format(fechaNacimiento) : "null") +
+            ", nombreCompleto='" + nombreCompleto + '\'' +
+            ", contrasena='" + contrasena + '\'' +
+            ", rolSistema=" + rolSistema +
+            ", idBlockchain='" + idBlockchain + '\'' +
+            ", email='" + email + '\'' +
+            '}';
     }
 }
 
