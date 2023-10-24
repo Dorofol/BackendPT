@@ -1,6 +1,6 @@
 package com.BackEnd.BackEnd.Modelos;
 
-public class UsuarioVotacionRolId {
+public class UsuariosVotacionId {
         private int idUsuario;
         private int idVotacion;
 }

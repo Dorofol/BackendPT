@@ -1,0 +1,87 @@
+CREATE TABLE `candidatos` (
+  `ID_Candidato` int NOT NULL AUTO_INCREMENT,
+  `Nombre_Candidato` varchar(255) DEFAULT NULL,
+  `descripcion_perfil` varchar(255) DEFAULT NULL,
+  `ID_Votacion` int DEFAULT NULL,
+  `Transaccion_Hash` varchar(66) DEFAULT NULL,
+  PRIMARY KEY (`ID_Candidato`),
+  KEY `ID_Votacion` (`ID_Votacion`)
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `candidatos_seq` (
+  `next_val` bigint DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `organizaciones` (
+  `ID_Organizacion` int NOT NULL AUTO_INCREMENT,
+  `Nombre_Organizacion` varchar(255) DEFAULT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `fecha_creacion` datetime(6) DEFAULT NULL,
+  `contrasena_administrador` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID_Organizacion`)
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `usuario_organizacion_rol` (
+  `ID_Usuario` int NOT NULL,
+  `ID_Organizacion` int NOT NULL,
+  `rol` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID_Usuario`,`ID_Organizacion`),
+  KEY `usuario_organizacion_rol_ibfk_2` (`ID_Organizacion`),
+  CONSTRAINT `usuario_organizacion_rol_ibfk_1` FOREIGN KEY (`ID_Usuario`) REFERENCES `usuarios` (`ID_Usuario`),
+  CONSTRAINT `usuario_organizacion_rol_ibfk_2` FOREIGN KEY (`ID_Organizacion`) REFERENCES `organizaciones` (`ID_Organizacion`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `usuarios` (
+  `ID_Usuario` int NOT NULL AUTO_INCREMENT,
+  `fecha_nacimiento` datetime(6) DEFAULT NULL,
+  `Nombre_Completo` varchar(255) DEFAULT NULL,
+  `contrasena` varchar(255) DEFAULT NULL,
+  `rol_sistema` enum('Admin','Usuario') DEFAULT NULL,
+  `ID_Blockchain` varchar(255) DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  PRIMARY KEY (`ID_Usuario`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `usuarios_votacion` (
+  `id_usuario` int NOT NULL,
+  `id_votacion` int NOT NULL,
+  `id_blockchain` varchar(255) NOT NULL,
+  `transaccion_hash` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_usuario`,`id_votacion`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `votaciones` (
+  `ID_Votacion` int NOT NULL AUTO_INCREMENT,
+  `Titulo_Votacion` varchar(255) DEFAULT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `fecha_inicio` datetime(6) DEFAULT NULL,
+  `fecha_cierre` datetime(6) DEFAULT NULL,
+  `ID_Organizacion` int DEFAULT NULL,
+  `estatus` enum('Activa','Finalizada','Inactiva') DEFAULT NULL,
+  `transaccion_hash` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID_Votacion`),
+  KEY `ID_Organizacion` (`ID_Organizacion`),
+  CONSTRAINT `votaciones_ibfk_1` FOREIGN KEY (`ID_Organizacion`) REFERENCES `organizaciones` (`ID_Organizacion`)
+) ENGINE=InnoDB AUTO_INCREMENT=253 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `votaciones_seq` (
+  `next_val` bigint DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `votos` (
+  `ID_Voto` int NOT NULL AUTO_INCREMENT,
+  `ID_Usuario` int DEFAULT NULL,
+  `ID_Candidato` int DEFAULT NULL,
+  `timestamp` datetime(6) DEFAULT NULL,
+  `Transaccion_Hash` varchar(66) DEFAULT NULL,
+  PRIMARY KEY (`ID_Voto`),
+  KEY `ID_Usuario` (`ID_Usuario`),
+  KEY `ID_Candidato` (`ID_Candidato`),
+  CONSTRAINT `votos_ibfk_1` FOREIGN KEY (`ID_Usuario`) REFERENCES `usuarios` (`ID_Usuario`),
+  CONSTRAINT `votos_ibfk_2` FOREIGN KEY (`ID_Candidato`) REFERENCES `candidatos` (`ID_Candidato`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `votos_seq` (
+  `next_val` bigint DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

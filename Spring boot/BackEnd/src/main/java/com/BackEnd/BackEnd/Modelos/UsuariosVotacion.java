@@ -16,26 +16,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "usuario_votacion_rol")
+@Table(name = "usuarios_votacion")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@IdClass(UsuarioVotacionRolId.class)
-public class UsuarioVotacionRol {
+@IdClass(UsuariosVotacionId.class)
+public class UsuariosVotacion  {
 
     @Id
-    @Column(name = "ID_Usuario")
+    @Column(name = "id_Usuario")
     private int idUsuario;
 
     @Id
-    @Column(name = "ID_Votacion")
+    @Column(name = "id_Votacion")
     private int idVotacion;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "Rol")
-    private Rol rol;
+    @Column(name = "id_blockchain")
+    private int idBlockchain;
 
-    public enum Rol {
-        Admin, Usuario, Modificar, Lectura
-    }
+    @Column(name = "transaccion_hash")
+    private String transaccionHash;
+
 }

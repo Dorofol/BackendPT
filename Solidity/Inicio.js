@@ -3,10 +3,13 @@ const {Web3}  = require('web3')
 const fs = require('fs');
 const bodyParser = require('body-parser');
 
+const cors = require('cors');
+
 const app = express();
 const PORT = 3000;
 
 app.use(bodyParser.json());  // Esto permite que express procese datos en formato JSON
+app.use(cors());
 
 let provider = new Web3.providers.HttpProvider("HTTP://127.0.0.1:7545");
 let web3 = new Web3(provider);
@@ -14,25 +17,56 @@ const abi = JSON.parse(fs.readFileSync('./contractVotations2_sol_Votaciones.abi'
 const bytecode = '0x' + fs.readFileSync('./contractVotations2_sol_Votaciones.bin');
 //const abi = JSON.parse(fs.readFileSync('./contractVotations2_sol_crearVotacion.abi'));
 //const abi = JSON.parse(fs.readFileSync('./__test_sol_SimpleStorage.abi'));
-const contractAddress= '0x52BBf496A4A56c3fa6cd8DC8BF45157d29072A05';
+//const contractAddress= '0xE85887C410D48D970dE2a1a4584C88556fFEE223';
 
-const contrato = new web3.eth.Contract(abi, contractAddress);
+//const contrato = new web3.eth.Contract(abi, contractAddress);
 const direccion_cuenta='0x5e3CC189c1394f9535f5752D5D0FfE3B8F5A2967';
+app.post('/desplegarContrato', async (req, res) => {
+    const { id, nombre, descripcion, fecha_inicio, fecha_final, contrasena } = req.body;
+
+    try {
+        const accounts = await web3.eth.getAccounts();
+        const contrato = new web3.eth.Contract(abi);
+
+        const deployedContrato = await contrato.deploy({
+            data: bytecode,
+            arguments: [id, nombre, descripcion, fecha_inicio, fecha_final, contrasena]
+        }).send({
+            from: accounts[0],
+            gas: 6721974
+        });
+
+        console.log('Contrato desplegado en la dirección:', deployedContrato.options.address);
+
+        res.json({
+            success: true,
+            address: deployedContrato.options.address
+        });
+    } catch (error) {
+        console.error(error);
+        res.json({
+            success: false,
+            message: "Error al desplegar el contrato"
+        });
+    }
+});
 app.get('/', (req, res) => {
     res.send('API de voto en línea funcionando!');
 });
 app.post('/agregarCandidato', async (req, res) => {
-    const { id_candidato, nombre_candidato, email_candidato, contrasena } = req.body;
+    const { id_candidato, nombre_candidato, email_candidato, contrasena, direccionHash } = req.body;
+    const contrato = new web3.eth.Contract(abi, direccionHash);
     try {
-        await contrato.methods.agregarCandidato(id_candidato, nombre_candidato, email_candidato, contrasena).send({ from: direccion_cuenta ,gas: 6721974});
-        res.json({ success: 'Candidato agregado con éxito' });
+        const respuesta=await contrato.methods.agregarCandidato(id_candidato, nombre_candidato, email_candidato, contrasena).send({ from: direccion_cuenta ,gas: 6721974});
+        console.log(respuesta)
+        res.json({ success: 'Candidato agregado con éxito',transaccionHash: respuesta.transactionHash  });
     } catch (error) {
         console.log(error)
         res.status(500).json({ error: 'Error al agregar el candidato: ' + error });
     }
 });
 app.post('/agregarVotante', async (req, res) => {
-    const { id_votante, contrasena } = req.body;
+    const { id_votante, contrasena , direccionHash} = req.body;
     try {
         await contrato.methods.agregarVotante(id_votante, contrasena).send({ from: direccion_cuenta ,gas: 6721974});
         res.json({ success: 'Votante agregado con éxito' });
@@ -41,7 +75,7 @@ app.post('/agregarVotante', async (req, res) => {
     }
 });
 app.put('/cambiarPasswordVotante', async (req, res) => {
-    const { id_votante, contrasena, nueva_contrasena } = req.body;
+    const { id_votante, contrasena, nueva_contrasena , direccionHash} = req.body;
     try {
         await contrato.methods.cambiarContrasenaVot(id_votante, contrasena, nueva_contrasena).send({ from: direccion_cuenta,gas: 6721974 });
         res.json({ success: 'Contraseña cambiada con éxito' });
@@ -50,7 +84,7 @@ app.put('/cambiarPasswordVotante', async (req, res) => {
     }
 });
 app.post('/votar', async (req, res) => {
-    const { candidato_ID, votante_id, contrasena_votante } = req.body;
+    const { candidato_ID, votante_id, contrasena_votante ,direccionHash} = req.body;
     try {
         await contrato.methods.votar(candidato_ID, votante_id, contrasena_votante).send({ from: direccion_cuenta,gas: 6721974 });
         res.json({ success: 'Votado con éxito' });
@@ -60,6 +94,8 @@ app.post('/votar', async (req, res) => {
 });
 app.get('/getNumCandidatos', async (req, res) => {
     try {
+        
+        const contrato = new web3.eth.Contract(abi, "0xC1e39269be1eC3a87a1756307E28C8A3371945D5");
         const numCandidatos = await contrato.methods.getNumeroCandidatos().call();
         res.json({ numCandidatos:numCandidatos.toString() });
     } catch (error) {
@@ -76,7 +112,8 @@ app.get('/getNumVotadores', async (req, res) => {
 });
 app.get('/getCandidato/:id', async (req, res) => {
     const id = req.params.id;
-    const contrasena_votante = "contrasena"; // Asumiendo que pasas la contraseña en el cuerpo de la solicitud
+    const contrasena_votante = "contrasenaSegura123"; // Asumiendo que pasas la contraseña en el cuerpo de la solicitud
+    const contrato = new web3.eth.Contract(abi, "0xC1e39269be1eC3a87a1756307E28C8A3371945D5");
     try {
         const candidato = await contrato.methods.getCandidate(id, contrasena_votante).call();
         let candidatoSerializable = {
@@ -114,9 +151,9 @@ app.get('/obtenerGanador', async (req, res) => {
 });
 app.post('/terminarVotacion', async (req, res) => {
     try {
-        const { contrasena } = req.body;
+        const { contrasena,direccionHash} = req.body;
 
-        const contrato = new web3.eth.Contract(abi, contractAddress);
+        const contrato = new web3.eth.Contract(abi, direccionHash);
 
         const txReceipt = await contrato.methods.terminarVotacion(contrasena).send({ from: direccion_cuenta,gas: 6721974 });
         
@@ -127,7 +164,7 @@ app.post('/terminarVotacion', async (req, res) => {
 });
 app.post('/crearEleccion', async (req, res) => {
     try {
-        const { id,nombre ,descripcion,fecha_inicio,fecha_final,contrasena} = req.body;
+        const { id,nombre ,descripcion,fecha_inicio,fecha_final,contrasena,direccionHash} = req.body;
 
         const contratoAdesp = new web3.eth.Contract(abi);
 
@@ -140,7 +177,7 @@ app.post('/crearEleccion', async (req, res) => {
                 gas: 6721974
             });
             console.log(deployedContrato.options.address)
-            res.send({ contractAddress: deployedContrato.options.address });
+            res.send({ direccionHash: deployedContrato.options.address });
         });
     } catch (error) {
         res.status(500).send({ error: error.message });

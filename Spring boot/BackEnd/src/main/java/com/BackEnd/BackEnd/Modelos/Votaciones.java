@@ -24,29 +24,33 @@ import lombok.NoArgsConstructor;
 @IdClass(VotacionesId.class)
 public class Votaciones {
 
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Para auto increment
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "ID_Votacion")
     private int idVotacion;
 
     @Column(name = "Titulo_Votacion")
     private String tituloVotacion;
 
-    @Column(name = "Descripcion")
+    @Column(name = "descripcion")
     private String descripcion;
 
-    @Column(name = "Fecha_Inicio")
+    @Column(name = "fecha_Inicio")
     private Date fechaInicio;
 
-    @Column(name = "Fecha_Cierre")
+    @Column(name = "fecha_Cierre")
     private Date fechaCierre;
 
     @Id 
     @Column(name = "ID_Organizacion")
     private int idOrganizacion; 
 
+    @Column(name = "transaccion_hash")
+    private String transaccionHash;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "Estatus")
+    @Column(name = "estatus")
     private EstatusVotacion estatus;
 
     public enum EstatusVotacion {

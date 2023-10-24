@@ -10,5 +10,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UsuarioOrganizacionRolRepo extends JpaRepository<UsuarioOrganizacionRol, Integer> {
     List<UsuarioOrganizacionRol> findByIdUsuario(int idUsuario);
-
+    List<UsuarioOrganizacionRol> findByIdOrganizacion(int idOrganizacion);
+    List<UsuarioOrganizacionRol> findByIdOrganizacionAndIdUsuario(int idOrganizacion, int idUsuario);
 }

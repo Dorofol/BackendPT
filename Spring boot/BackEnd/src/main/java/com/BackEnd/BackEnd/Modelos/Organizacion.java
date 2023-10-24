@@ -41,4 +41,8 @@ public class Organizacion {
         this.fechaCreacion = fechaCreacion;
         this.contrasenaAdministrador = contrasenaAdministrador;
     }
+
+    public int getId() {
+        return this.idOrganizacion;
+    }
 }

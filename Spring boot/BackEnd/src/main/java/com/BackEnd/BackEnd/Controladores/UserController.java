@@ -64,7 +64,6 @@ public ResponseEntity<?> updateUsuario(@PathVariable int id, @RequestBody Usuari
         existingUser.setContrasena(updatedUserData.getContrasena()); 
         existingUser.setIdBlockchain(updatedUserData.getIdBlockchain()); 
         existingUser.setFechaNacimiento(updatedUserData.getFechaNacimiento()); 
-        System.out.println(updatedUserData.getFechaNacimiento().toString()+"asdasdasd"+existingUser.getFechaNacimiento());
         repo.save(existingUser);  
         return ResponseEntity.ok(existingUser);
         

@@ -2,17 +2,22 @@ package com.BackEnd.BackEnd.Controladores;
 
 import com.BackEnd.BackEnd.Modelos.Organizacion;
 import com.BackEnd.BackEnd.Modelos.OrganizacionResponseDTO;
+import com.BackEnd.BackEnd.Modelos.Usuario;
 import com.BackEnd.BackEnd.Modelos.UsuarioOrganizacionRol;
 import com.BackEnd.BackEnd.Repositorios.OrganizacionRepo;
+import com.BackEnd.BackEnd.Repositorios.UserRepo;
 import com.BackEnd.BackEnd.Repositorios.UsuarioOrganizacionRolRepo;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,6 +30,42 @@ public class OrganizacionControlador {
 
     @Autowired
     private OrganizacionRepo organizacionRepository;
+
+    @Autowired
+    private UserRepo userRepo;
+
+@GetMapping("/porOrganizacion/{idOrganizacion}")
+public List<Map<String, String>> getEmailsByOrganizacion(@PathVariable int idOrganizacion) {
+    List<UsuarioOrganizacionRol> usuariosOrganizacion = repo.findByIdOrganizacion(idOrganizacion);
+    
+    return usuariosOrganizacion.stream()
+            .map(rol -> {
+                Map<String, String> emailAndRole = new HashMap<>();
+                Usuario user = userRepo.findById(rol.getIdUsuario()).orElse(new Usuario());
+                emailAndRole.put("email", user.getEmail());
+                emailAndRole.put("rol", rol.getRol());
+                return emailAndRole;
+            })
+            .collect(Collectors.toList());
+}
+
+
+@PutMapping("/editarOrg/{id}")
+public ResponseEntity<?> actualizarOrganizacion(@PathVariable Integer id, 
+                                               @RequestBody Organizacion organizacionActualizada,
+                                               @RequestParam String contrasenaAdmin) {
+    return organizacionRepository.findById(id).map(organizacion -> {
+        if (!organizacion.getContrasenaAdministrador().equals(contrasenaAdmin)) {
+            return new ResponseEntity<>("Contraseña de administrador incorrecta", HttpStatus.FORBIDDEN);
+        }
+        organizacion.setNombreOrganizacion(organizacionActualizada.getNombreOrganizacion());
+        organizacion.setDescripcion(organizacionActualizada.getDescripcion());
+        organizacionRepository.save(organizacion);
+        return new ResponseEntity<>(organizacion, HttpStatus.OK);
+    }).orElse(new ResponseEntity<>("Organización no encontrada", HttpStatus.NOT_FOUND));
+}
+
+
     @GetMapping("/obtenerPorIdUsuario/{id}")
  public ResponseEntity<List<OrganizacionResponseDTO>> obtenerPorIdUsuario(@PathVariable Integer id) {
     
@@ -54,7 +95,43 @@ public class OrganizacionControlador {
     return ResponseEntity.ok(responseDTOs);
 }
 
+@PostMapping("/agregarUsuarioOrganizacion")
+public ResponseEntity<Map<String, String>> agregarUsuarioOrganizacion(@RequestParam("idOrganizacion") Integer idOrganizacion, @RequestParam("idUsuario") Integer idUsuario, @RequestParam("rol") String rol) {
+    System.out.println("asdasdasdasdasdsad");
+    UsuarioOrganizacionRol usuarioOrgRol = new UsuarioOrganizacionRol();
+    usuarioOrgRol.setIdUsuario(idUsuario);
+    usuarioOrgRol.setIdOrganizacion(idOrganizacion);
+    usuarioOrgRol.setRol(rol);
+
+    repo.save(usuarioOrgRol);
     
+    Map<String, String> response = new HashMap<>();
+    response.put("message", "Usuario agregado a la organización con éxito");
+
+    return ResponseEntity.ok(response);
+}
+@DeleteMapping("/eliminarUsuarioOrganizacion")
+public ResponseEntity<Map<String, String>> eliminarUsuarioOrganizaciones(@RequestParam("idOrganizacion") Integer idOrganizacion, @RequestParam("idUsuario") Integer idUsuario) {
+    // Busca la relación en la base de datos
+    List<UsuarioOrganizacionRol> relaciones = repo.findByIdOrganizacionAndIdUsuario(idOrganizacion, idUsuario);
+
+    if (relaciones.isEmpty()) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "No se encontró la relación entre el usuario y la organización");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    // Elimina todas las coincidencias (aunque debería ser solo una)
+    for (UsuarioOrganizacionRol relacion : relaciones) {
+        repo.delete(relacion);
+    }
+
+    Map<String, String> response = new HashMap<>();
+    response.put("message", "Usuario eliminado de la organización con éxito");
+
+    return ResponseEntity.ok(response);
+}
+
 
 
     public OrganizacionResponseDTO mapToDTO(Organizacion organizacion) {
@@ -82,9 +159,18 @@ public class OrganizacionControlador {
     }
 
     @PostMapping("/crearOrganizacion")
-    public Organizacion crearOrganizacion(@RequestBody Organizacion organizacion) {
+    public Organizacion crearOrganizacion(@RequestBody Organizacion organizacion, @RequestParam("idUsuario") Integer idUsuario) {
         organizacion.setFechaCreacion(new Date());
-        return organizacionRepository.save(organizacion);
+        Organizacion orgGuardada = organizacionRepository.save(organizacion);
+
+        UsuarioOrganizacionRol usuarioOrgRol = new UsuarioOrganizacionRol();
+        usuarioOrgRol.setIdUsuario(idUsuario);
+        usuarioOrgRol.setIdOrganizacion(orgGuardada.getId());
+        usuarioOrgRol.setRol("Administrador");
+    
+        repo.save(usuarioOrgRol);
+    
+        return orgGuardada;
     }
 
     @DeleteMapping("/{id}")
