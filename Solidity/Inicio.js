@@ -66,14 +66,21 @@ app.post('/agregarCandidato', async (req, res) => {
     }
 });
 app.post('/agregarVotante', async (req, res) => {
-    const { id_votante, contrasena , direccionHash} = req.body;
+    const { id_votante, contrasena , direccionHash } = req.body;
+    const contrato = new web3.eth.Contract(abi, direccionHash);
+
     try {
-        await contrato.methods.agregarVotante(id_votante, contrasena).send({ from: direccion_cuenta ,gas: 6721974});
-        res.json({ success: 'Votante agregado con éxito' });
+        const transactionResponse = await contrato.methods.agregarVotante(id_votante, contrasena).send({ from: direccion_cuenta ,gas: 6721974});
+        console.log(transactionResponse.transactionHash);
+        res.json({ 
+            transactionHash: transactionResponse.transactionHash
+        });
+
     } catch (error) {
         res.status(500).json({ error: 'Error al agregar el votante: ' + error.message });
     }
 });
+
 app.put('/cambiarPasswordVotante', async (req, res) => {
     const { id_votante, contrasena, nueva_contrasena , direccionHash} = req.body;
     try {

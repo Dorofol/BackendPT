@@ -8,6 +8,8 @@ import com.BackEnd.BackEnd.Repositorios.UsuarioOrganizacionRolRepo;
 import com.BackEnd.BackEnd.Modelos.Votaciones;
 import com.BackEnd.BackEnd.Modelos.Votaciones.EstatusVotacion;
 import com.BackEnd.BackEnd.Repositorios.VotacionesRepo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -87,12 +89,12 @@ public ResponseEntity<Votaciones> agregarVotacion(@RequestBody Votaciones votaci
     // 2. Buscar todos los usuarios que pertenecen a esa organización
     List<UsuarioOrganizacionRol> usuarios = usuarioOrganizacionRolRepo.findByIdOrganizacion(organizacionId);
     System.out.println(usuarios);
+    
     // 3. Agregar esos usuarios a UsuariosVotacion
     for (UsuarioOrganizacionRol usuarioOrgRol : usuarios) {
-        
         UsuariosVotacion usuarioVotacion = new UsuariosVotacion();
         Map<String, Object> body = new HashMap<>();
-        body.put("id_votante", usuarioVotacion.getIdUsuario());
+        body.put("id_votante", usuarioOrgRol.getIdUsuario());
         body.put("contrasena", "contrasenaSegura123");  // Asegúrate de obtener o definir la contraseña
         body.put("direccionHash", "0x032d8249feA7f21bbBb6dBF560b4c4d75c125693");  // Asegúrate de obtener o definir la dirección hash
 
@@ -102,16 +104,21 @@ public ResponseEntity<Votaciones> agregarVotacion(@RequestBody Votaciones votaci
         // Realizar la solicitud POST
         ResponseEntity<String> response = restTemplate.exchange("http://localhost:3000/agregarVotante", HttpMethod.POST, entity, String.class);
 
-        // Imprimir la respuesta
-        System.out.println(response.getBody());
+        // Parsear el JSON
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, String> responseMap = objectMapper.readValue(response.getBody(), new TypeReference<Map<String,String>>(){});
+
+        // Imprimir la respuesta y obtener el transactionHash
+        String transactionHash = responseMap.get("transactionHash");
+        System.out.println(transactionHash);
+
         usuarioVotacion.setIdUsuario(usuarioOrgRol.getIdUsuario());
         usuarioVotacion.setIdVotacion(votacion.getIdVotacion());
         usuarioVotacion.setIdBlockchain(1);
-        usuarioVotacion.setTransaccionHash("0xpaosdkaspofsamfasfsafasf465sa4f");        
+        usuarioVotacion.setTransaccionHash(transactionHash);        
         usuariosVotacionRepo.save(usuarioVotacion);
     }
         
-
     return new ResponseEntity<>(votacion, HttpStatus.OK);
 }
 

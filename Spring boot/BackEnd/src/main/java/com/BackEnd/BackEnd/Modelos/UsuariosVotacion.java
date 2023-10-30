@@ -37,4 +37,6 @@ public class UsuariosVotacion  {
     @Column(name = "transaccion_hash")
     private String transaccionHash;
 
+
+
 }

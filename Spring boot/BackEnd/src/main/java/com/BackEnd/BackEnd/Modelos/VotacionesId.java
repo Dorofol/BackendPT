@@ -4,6 +4,14 @@ import java.io.Serializable;
 public class VotacionesId implements Serializable {
     private int idVotacion;
     private int idOrganizacion;
+    public VotacionesId() {}
+
+    // Constructor con argumentos
+    public VotacionesId(int idVotacion, int idOrganizacion) {
+        this.idVotacion = idVotacion;
+        this.idOrganizacion = idOrganizacion;
+    }
+
     public int getIdVotacion() {
         return idVotacion;
     }
