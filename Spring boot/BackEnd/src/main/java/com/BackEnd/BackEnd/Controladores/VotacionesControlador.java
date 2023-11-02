@@ -136,8 +136,9 @@ public ResponseEntity<Votaciones> agregarVotacion(@RequestBody Votaciones votaci
 }
 
     @PostMapping("/votar")
-    public ResponseEntity<String> votar(int candidato_ID, int votante_id, String direccionHash) {
+    public ResponseEntity<Map<String, String>> votar(Integer candidato_ID, Integer votante_id, Integer votacion_ID, String direccionHash) {
         // Construye el cuerpo de la solicitud con los parámetros requeridos
+        System.out.println(candidato_ID+""+votante_id+""+direccionHash);
         Map<String, Object> body = new HashMap<>();
         body.put("candidato_ID", candidato_ID);
         body.put("votante_id", votante_id);
@@ -161,20 +162,29 @@ public ResponseEntity<Votaciones> agregarVotacion(@RequestBody Votaciones votaci
 
         Votos voto = new Votos();
         voto.setIdUsuario(votante_id);
-        voto.setIdCandidato(candidato_ID);
+        voto.setIdVotaciones(votacion_ID);
         voto.setTimestamp(LocalDateTime.now());
         voto.setTransaccionHash(transactionHash);
         votosRepo.save(voto);
 
-        return response;
+        Map<String, String> responseBody = new HashMap<>();
+        responseBody.put("transactionHash", transactionHash);
+        return ResponseEntity.ok(responseBody);
     }
 
 @GetMapping("/obtenerGanador")
 public ResponseEntity<String> obtenerGanador(String direccionHash) {
     String url = "http://localhost:3000/obtenerGanador?direccionHash=" + direccionHash;
     ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, null, String.class);
-    return response;
+    
+    return ResponseEntity.ok(response.getBody());
 }
+@GetMapping("/porIdVotaciones/{idVotaciones}")
+public ResponseEntity<List<Votos>> obtenerVotosPorIdVotaciones(@PathVariable int idVotaciones) {
+    List<Votos> votos = votosRepo.findByIdVotaciones(idVotaciones);
+    return ResponseEntity.ok(votos);
+}
+
 
     
     @PostMapping("/agregarCandidato")
@@ -186,5 +196,6 @@ public ResponseEntity<String> obtenerGanador(String direccionHash) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 }

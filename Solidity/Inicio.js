@@ -95,7 +95,7 @@ app.put('/cambiarPasswordVotante', async (req, res) => {
     }
 });
 app.post('/votar', async (req, res) => {
-    const { candidato_ID, votante_id, contrasena_votante ,direccionHash} = req.body;
+    const { candidato_ID, votante_id ,direccionHash} = req.body;
     const contrato = new web3.eth.Contract(abi, direccionHash);
     try {
         const transactionResponse = await contrato.methods.votar(candidato_ID, votante_id, "contrasenaSegura123").send({ from: direccion_cuenta,gas: 6721974 });
@@ -104,7 +104,7 @@ app.post('/votar', async (req, res) => {
             transactionHash: transactionResponse.transactionHash});
     } catch (error) {
         console.log(error)
-        res.status(500).json({ error: 'Error al votar: ' + error.innerError.message });
+        res.status(500).json({ error: 'Error al votar: ' });
     }
 });
 app.get('/getNumCandidatos', async (req, res) => {

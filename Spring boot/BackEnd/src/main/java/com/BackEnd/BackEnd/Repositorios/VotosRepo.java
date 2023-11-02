@@ -11,5 +11,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface VotosRepo extends JpaRepository<Votos, Integer> {
-    
+   
+    List<Votos> findByIdVotaciones(int idVotaciones); 
 }

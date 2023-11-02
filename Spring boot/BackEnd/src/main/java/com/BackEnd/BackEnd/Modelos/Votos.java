@@ -21,19 +21,18 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@IdClass(VotosId.class)
 public class Votos {
 
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "ID_Voto")
     private int idVoto;
-    @Id
+    
     @Column(name = "ID_Usuario")
     private int idUsuario;
-    @Id
-    @Column(name = "ID_Candidato")
-    private int idCandidato;
+    
+    @Column(name = "ID_Votaciones")
+    private int idVotaciones;
 
     @Column(name = "Timestamp")
     private LocalDateTime timestamp;
