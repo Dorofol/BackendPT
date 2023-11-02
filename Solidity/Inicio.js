@@ -20,7 +20,7 @@ const bytecode = '0x' + fs.readFileSync('./contractVotations2_sol_Votaciones.bin
 //const contractAddress= '0xE85887C410D48D970dE2a1a4584C88556fFEE223';
 
 //const contrato = new web3.eth.Contract(abi, contractAddress);
-const direccion_cuenta='0x5e3CC189c1394f9535f5752D5D0FfE3B8F5A2967';
+const direccion_cuenta='0x1230De2789568d0f4fCc69822914792d5f8654C7';
 app.post('/desplegarContrato', async (req, res) => {
     const { id, nombre, descripcion, fecha_inicio, fecha_final, contrasena } = req.body;
 
@@ -30,7 +30,7 @@ app.post('/desplegarContrato', async (req, res) => {
 
         const deployedContrato = await contrato.deploy({
             data: bytecode,
-            arguments: [id, nombre, descripcion, fecha_inicio, fecha_final, contrasena]
+            arguments: [id, nombre, descripcion, fecha_inicio, fecha_final, ""]
         }).send({
             from: accounts[0],
             gas: 6721974
@@ -39,7 +39,7 @@ app.post('/desplegarContrato', async (req, res) => {
         console.log('Contrato desplegado en la dirección:', deployedContrato.options.address);
         
          const contrato2 = new web3.eth.Contract(abi, deployedContrato.options.address);
-        await contrato2.methods.agregarCandidato(0, "test", "test@gmail.com", "contrasenaSegura123").send({ from: direccion_cuenta ,gas: 6721974});
+        await contrato2.methods.agregarCandidato(0, "test", "test@gmail.com", "").send({ from: direccion_cuenta ,gas: 6721974});
         res.json({
             success: true,
             address: deployedContrato.options.address
@@ -59,7 +59,7 @@ app.post('/agregarCandidato', async (req, res) => {
     const { id_candidato, nombre_candidato, email_candidato, contrasena, direccionHash } = req.body;
     const contrato = new web3.eth.Contract(abi, direccionHash);
     try {
-        const respuesta=await contrato.methods.agregarCandidato(id_candidato, nombre_candidato, email_candidato, contrasena).send({ from: direccion_cuenta ,gas: 6721974});
+        const respuesta=await contrato.methods.agregarCandidato(id_candidato, nombre_candidato, email_candidato, "").send({ from: direccion_cuenta ,gas: 6721974});
         console.log(respuesta)
         res.json({ success: 'Candidato agregado con éxito',transaccionHash: respuesta.transactionHash  });
     } catch (error) {
@@ -98,7 +98,7 @@ app.post('/votar', async (req, res) => {
     const { candidato_ID, votante_id ,direccionHash} = req.body;
     const contrato = new web3.eth.Contract(abi, direccionHash);
     try {
-        const transactionResponse = await contrato.methods.votar(candidato_ID, votante_id, "contrasenaSegura123").send({ from: direccion_cuenta,gas: 6721974 });
+        const transactionResponse = await contrato.methods.votar(candidato_ID, votante_id, "").send({ from: direccion_cuenta,gas: 6721974 });
         console.log("votando"+transactionResponse.transactionHash)
         res.json({ 
             transactionHash: transactionResponse.transactionHash});
