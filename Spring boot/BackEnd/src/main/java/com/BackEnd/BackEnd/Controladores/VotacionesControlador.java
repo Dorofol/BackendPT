@@ -7,7 +7,13 @@ import com.BackEnd.BackEnd.Repositorios.UsuariosVotacionRepo;
 import com.BackEnd.BackEnd.Repositorios.UsuarioOrganizacionRolRepo;
 import com.BackEnd.BackEnd.Modelos.Votaciones;
 import com.BackEnd.BackEnd.Modelos.Votaciones.EstatusVotacion;
+import com.BackEnd.BackEnd.Modelos.Votos;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.BackEnd.BackEnd.Repositorios.VotacionesRepo;
+import com.BackEnd.BackEnd.Repositorios.VotosRepo;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -18,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +46,11 @@ public class VotacionesControlador {
         @Autowired
     private UsuarioOrganizacionRolRepo usuarioOrganizacionRolRepo;
         @Autowired
-    private UsuariosVotacionRepo usuariosVotacionRepo;
+    private UsuariosVotacionRepo usuariosVotacionRepo;    
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    @Autowired
+    private VotosRepo votosRepo; 
 
     @PutMapping("/estatus/{idVotacion}/{idOrganizacion}")
     public ResponseEntity<Votaciones> updateVotacionEstatus(@PathVariable int idVotacion, @PathVariable int idOrganizacion, @RequestBody String estatusString) {
@@ -88,13 +99,14 @@ public ResponseEntity<Votaciones> agregarVotacion(@RequestBody Votaciones votaci
     List<UsuarioOrganizacionRol> usuarios = usuarioOrganizacionRolRepo.findByIdOrganizacion(organizacionId);
     System.out.println(usuarios);
     // 3. Agregar esos usuarios a UsuariosVotacion
+    int idBlockchain = 1;  
     for (UsuarioOrganizacionRol usuarioOrgRol : usuarios) {
         
         UsuariosVotacion usuarioVotacion = new UsuariosVotacion();
         Map<String, Object> body = new HashMap<>();
         body.put("id_votante", usuarioVotacion.getIdUsuario());
-        body.put("contrasena", "contrasenaSegura123");  // Asegúrate de obtener o definir la contraseña
-        body.put("direccionHash", "0x032d8249feA7f21bbBb6dBF560b4c4d75c125693");  // Asegúrate de obtener o definir la dirección hash
+        body.put("contrasena", "contrasenaSegura123");  
+        body.put("direccionHash", votacion.getTransaccionHash());  
 
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
@@ -104,15 +116,64 @@ public ResponseEntity<Votaciones> agregarVotacion(@RequestBody Votaciones votaci
 
         // Imprimir la respuesta
         System.out.println(response.getBody());
+        String responseBody = response.getBody();
+        String key = "\"transactionHash\":\"";
+        int startIndex = responseBody.indexOf(key) + key.length();
+        int endIndex = responseBody.indexOf("\"", startIndex);
+        String transactionHash = responseBody.substring(startIndex, endIndex);
+
+
         usuarioVotacion.setIdUsuario(usuarioOrgRol.getIdUsuario());
         usuarioVotacion.setIdVotacion(votacion.getIdVotacion());
-        usuarioVotacion.setIdBlockchain(1);
-        usuarioVotacion.setTransaccionHash("0xpaosdkaspofsamfasfsafasf465sa4f");        
+        usuarioVotacion.setIdBlockchain(idBlockchain);
+        usuarioVotacion.setTransaccionHash(transactionHash);        
         usuariosVotacionRepo.save(usuarioVotacion);
+        idBlockchain++;
     }
         
 
     return new ResponseEntity<>(votacion, HttpStatus.OK);
+}
+
+    @PostMapping("/votar")
+    public ResponseEntity<String> votar(int candidato_ID, int votante_id, String direccionHash) {
+        // Construye el cuerpo de la solicitud con los parámetros requeridos
+        Map<String, Object> body = new HashMap<>();
+        body.put("candidato_ID", candidato_ID);
+        body.put("votante_id", votante_id);
+        body.put("contrasena_votante", "contrasenaSegura123");
+        body.put("direccionHash", direccionHash);
+
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        // Realiza la solicitud POST al endpoint '/votar'
+        ResponseEntity<String> response = restTemplate.exchange("http://localhost:3000/votar", HttpMethod.POST, entity, String.class);
+
+        // Asumiendo que la respuesta contiene el campo "transactionHash"
+        String transactionHash="";
+        System.out.println("aaaaaaaaaaaaaa"+response);
+        try {
+            transactionHash = objectMapper.readTree(response.getBody()).get("transactionHash").asText();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        Votos voto = new Votos();
+        voto.setIdUsuario(votante_id);
+        voto.setIdCandidato(candidato_ID);
+        voto.setTimestamp(LocalDateTime.now());
+        voto.setTransaccionHash(transactionHash);
+        votosRepo.save(voto);
+
+        return response;
+    }
+
+@GetMapping("/obtenerGanador")
+public ResponseEntity<String> obtenerGanador(String direccionHash) {
+    String url = "http://localhost:3000/obtenerGanador?direccionHash=" + direccionHash;
+    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, null, String.class);
+    return response;
 }
 
     

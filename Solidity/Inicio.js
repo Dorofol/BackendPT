@@ -37,7 +37,9 @@ app.post('/desplegarContrato', async (req, res) => {
         });
 
         console.log('Contrato desplegado en la dirección:', deployedContrato.options.address);
-
+        
+         const contrato2 = new web3.eth.Contract(abi, deployedContrato.options.address);
+        await contrato2.methods.agregarCandidato(0, "test", "test@gmail.com", "contrasenaSegura123").send({ from: direccion_cuenta ,gas: 6721974});
         res.json({
             success: true,
             address: deployedContrato.options.address
@@ -68,15 +70,17 @@ app.post('/agregarCandidato', async (req, res) => {
 app.post('/agregarVotante', async (req, res) => {
     const { id_votante, contrasena , direccionHash } = req.body;
     const contrato = new web3.eth.Contract(abi, direccionHash);
+    console.log(direccionHash)
 
     try {
-        const transactionResponse = await contrato.methods.agregarVotante(id_votante, contrasena).send({ from: direccion_cuenta ,gas: 6721974});
+        const transactionResponse = await contrato.methods.agregarVotante(id_votante, "contrasenaSegura123").send({ from: direccion_cuenta ,gas: 6721974});
         console.log(transactionResponse.transactionHash);
         res.json({ 
             transactionHash: transactionResponse.transactionHash
         });
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({ error: 'Error al agregar el votante: ' + error.message });
     }
 });
@@ -92,11 +96,15 @@ app.put('/cambiarPasswordVotante', async (req, res) => {
 });
 app.post('/votar', async (req, res) => {
     const { candidato_ID, votante_id, contrasena_votante ,direccionHash} = req.body;
+    const contrato = new web3.eth.Contract(abi, direccionHash);
     try {
-        await contrato.methods.votar(candidato_ID, votante_id, contrasena_votante).send({ from: direccion_cuenta,gas: 6721974 });
-        res.json({ success: 'Votado con éxito' });
+        const transactionResponse = await contrato.methods.votar(candidato_ID, votante_id, "contrasenaSegura123").send({ from: direccion_cuenta,gas: 6721974 });
+        console.log("votando"+transactionResponse.transactionHash)
+        res.json({ 
+            transactionHash: transactionResponse.transactionHash});
     } catch (error) {
-        res.status(500).json({ error: 'Error al votar: ' + error.message });
+        console.log(error)
+        res.status(500).json({ error: 'Error al votar: ' + error.innerError.message });
     }
 });
 app.get('/getNumCandidatos', async (req, res) => {
@@ -149,13 +157,21 @@ app.get('/getVotador/:id', async (req, res) => {
     }
 });
 app.get('/obtenerGanador', async (req, res) => {
+    const direccionHash = req.query.direccionHash;
+
+    if(!direccionHash) {
+        return res.status(400).json({ error: 'Se requiere la direccionHash' });
+    }
+
+    const contrato = new web3.eth.Contract(abi, direccionHash);
     try {
         const id_candidatoGanador = await contrato.methods.candidatoGanador().call();
-        res.json({id_candidatoGanador:id_candidatoGanador.toString()});
+        res.json({id_candidatoGanador: id_candidatoGanador.toString()});
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener el candidato ganador: ' + error.message });
     }
 });
+
 app.post('/terminarVotacion', async (req, res) => {
     try {
         const { contrasena,direccionHash} = req.body;
