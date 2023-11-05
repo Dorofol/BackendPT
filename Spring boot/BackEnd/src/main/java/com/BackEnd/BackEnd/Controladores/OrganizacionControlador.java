@@ -173,6 +173,21 @@ public ResponseEntity<Map<String, String>> eliminarUsuarioOrganizaciones(@Reques
         return orgGuardada;
     }
 
+    @PutMapping("/editarOrganizacion/{id}")
+    public ResponseEntity<?> editarOrganizacion(@PathVariable(value = "id") Integer idOrganizacion,
+                                                           @RequestBody Organizacion detallesOrganizacion) {
+        return organizacionRepository.findById(idOrganizacion).map(organizacion -> {
+            organizacion.setNombreOrganizacion(detallesOrganizacion.getNombreOrganizacion());
+            organizacion.setDescripcion(detallesOrganizacion.getDescripcion());
+            organizacion.setContrasenaAdministrador(detallesOrganizacion.getContrasenaAdministrador());
+            Organizacion organizacionActualizada = organizacionRepository.save(organizacion);
+            return ResponseEntity.ok(organizacionActualizada);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+    
+    
+
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> borrarOrganizacion(@PathVariable Integer id) {
         if (organizacionRepository.existsById(id)) {
