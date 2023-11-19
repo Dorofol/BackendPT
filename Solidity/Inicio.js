@@ -20,7 +20,7 @@ const bytecode = '0x' + fs.readFileSync('./contractVotations2_sol_Votaciones.bin
 //const contractAddress= '0xE85887C410D48D970dE2a1a4584C88556fFEE223';
 
 //const contrato = new web3.eth.Contract(abi, contractAddress);
-const direccion_cuenta='0x1230De2789568d0f4fCc69822914792d5f8654C7';
+const direccion_cuenta='0x9384c6e649BA37BE19dFD900F59ba85509e94f3C';
 app.post('/desplegarContrato', async (req, res) => {
     const { id, nombre, descripcion, fecha_inicio, fecha_final, contrasena } = req.body;
 
@@ -73,7 +73,7 @@ app.post('/agregarVotante', async (req, res) => {
     console.log(direccionHash)
 
     try {
-        const transactionResponse = await contrato.methods.agregarVotante(id_votante, "contrasenaSegura123").send({ from: direccion_cuenta ,gas: 6721974});
+        const transactionResponse = await contrato.methods.agregarVotante(id_votante, "").send({ from: direccion_cuenta ,gas: 6721974});
         console.log(transactionResponse.transactionHash);
         res.json({ 
             transactionHash: transactionResponse.transactionHash
